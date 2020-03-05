@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Role, Resource, CustomUser
+from role_system.models import ActionResourcePair
+from .models import Role, Resource, CustomUser, Action
 
 
 class CustomUserAdmin(UserAdmin):
@@ -10,6 +11,8 @@ class CustomUserAdmin(UserAdmin):
     )
 
 
+admin.site.register(Action)
+admin.site.register(ActionResourcePair)
 admin.site.register(Role)
 admin.site.register(Resource)
 admin.site.register(CustomUser, CustomUserAdmin)

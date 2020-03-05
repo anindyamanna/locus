@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.urls import path
 
-from role_system.views import ResourceView
+from role_system.views import CheckAccess
 
 urlpatterns = [
-    path('resource', ResourceView.as_view()),
+    path('check-access/<resource_id>/<action_id>', CheckAccess.as_view()),
 ]

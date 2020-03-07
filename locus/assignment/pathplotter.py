@@ -5,15 +5,24 @@ import polyline
 
 
 class PathPlotter:
-    # todo: typing
-    fixed_distance = 1500  # in meters
+    fixed_distance = 100  # in meters
     key = None
 
-    def find_point_from_line(self, x1, y1, x2, y2, dt, d):
+    @staticmethod
+    def find_point_from_line(x1, y1, x2, y2, dt, d):
+        """
+        Used for finding a point along a line a certain distance away from another point!
+        :return: The resulting point in x, y format
+        """
         t = dt / d
         return (((1 - t) * x1) + (t * x2)), (((1 - t) * y1) + (t * y2))
 
-    def calculate_geo_distance(self, prev_location, new_location):
+    @staticmethod
+    def calculate_geo_distance(prev_location, new_location):
+        """
+        Used to find the distance between two lat-long coordinates
+        :return: Distance in meters
+        """
         R = 6373000.0  # Earth's radius in meters
         lat1 = math.radians(prev_location[0])
         lon1 = math.radians(prev_location[1])
@@ -30,10 +39,16 @@ class PathPlotter:
         distance = R * c
         return distance
 
-    def calculate_points(self, prev_location, new_location, fixed_distance_remaining=0):
+    def calculate_points(self, prev_location, new_location, fixed_distance_remaining):
+        """
+        Purpose of this function is to check and find fixed points between the two given locations. If not found the
+        fixed_distance_remaining is reduced by the distance between these points.
+        :return: Tuple of new points (Can be an empty list) and resulting fixed distance remaining
+        """
         new_points = []
         geo_distance = self.calculate_geo_distance(prev_location, new_location)
         while geo_distance > fixed_distance_remaining:
+            # Keep looping if more points can be extracted
             new_points.append(self.find_point_from_line(x1=prev_location[0], y1=prev_location[1], x2=new_location[0],
                                                         y2=new_location[1], dt=fixed_distance_remaining,
                                                         d=geo_distance))
@@ -46,10 +61,11 @@ class PathPlotter:
         return new_points, fixed_distance_remaining
 
     def plot_path(self, origin, destination):
+        # Query google maps directions API to get the response
         gmaps = googlemaps.Client(key=self.key)
         resp = gmaps.directions(origin=origin, destination=destination)
 
-        # Combine all the steps to get the whole polyline
+        # Combine all the steps to get the whole polyline for the route
         p_line = []
         for i in resp[0]['legs'][0]['steps']:
             p_line.extend(polyline.decode(i['polyline']['points']))
@@ -59,10 +75,11 @@ class PathPlotter:
         prev_location = p_line[0]
         fixed_distance_remaining = self.fixed_distance  # Start with full fixed distance
         for new_location in p_line[1:]:
+            # Loop through the polyline and try to find points of the fixed distance
             new_points, fixed_distance_remaining = self.calculate_points(prev_location, new_location,
                                                                          fixed_distance_remaining)
             result_points.extend(new_points)
-            prev_location = new_location
+            prev_location = new_location    # Update the current point so It becomes prev_location for next iteration.
 
         if fixed_distance_remaining and fixed_distance_remaining != self.fixed_distance:
             # Append last point if trail was remaining
